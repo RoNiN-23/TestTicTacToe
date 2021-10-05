@@ -12,7 +12,9 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     private TableLayout tableLayout;
+
     private Button[][] buttons = new Button[3][3];
+
     private Game game;
 
     @Override
@@ -22,19 +24,21 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         tableLayout = findViewById(R.id.tableLayout);
+
+
+        game = new Game();
         buildGameField(); // создание игрового поля
+        game.start(); // будет реализован позже
     }
 
-    private void buildGameField()
-    {
+    private void buildGameField() {
         Square[][] field = game.getField();
-        for (int i = 0, lenI = field.length; i < lenI; i++ ) {
+        for (int i = 0, lenI = field.length; i < lenI; i++) {
             TableRow row = new TableRow(this); // создание строки таблицы
-            for (int j = 0, lenJ = field[i].length; j < lenJ; j++)
-            {
+            for (int j = 0, lenJ = field[i].length; j < lenJ; j++) {
                 Button button = new Button(this);
                 buttons[i][j] = button;
-                button.setOnClickListener(new Listener(i, j));
+                button.setOnClickListener(new Listener(i, j)); // установка слушателя, реагирующего на клик по кнопке
                 row.addView(button, new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT,
                         TableRow.LayoutParams.WRAP_CONTENT)); // добавление кнопки в строку таблицы
                 button.setWidth(160);
@@ -46,20 +50,61 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class Listener implements View.OnClickListener
-    {
-        private int x = 0;
-        private int y = 0;
+    public class Listener implements View.OnClickListener {
+        private int x;
+        private int y;
 
-        Listener(int x, int y)
-        {
+        Listener(int x, int y) {
             this.x = x;
             this.y = y;
         }
 
-        public void onClick(View view)
-        {
+        public void onClick(View view) {
             Button button = (Button) view;
+            Game g = game;
+            Player player = g.getCurrentActivePlayer();
+            if (makeTurn(x, y)) {
+                button.setText(player.getName());
+            }
+            Player winner = g.checkWinner();
+            if (winner != null) {
+                gameOver(winner);
+            }
+            if (g.isFieldFilled()) {  // в случае, если поле заполнено
+                gameOver();
+            }
+        }
+    }
+
+    private void gameOver(Player player) {
+        CharSequence text = "Player \"" + player.getName() + "\" won!";
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+        game.reset();
+        refresh();
+    }
+
+    private void gameOver() {
+        CharSequence text = "Draw";
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+        game.reset();
+        refresh();
+    }
+
+    private boolean makeTurn(int x, int y) {
+        return game.makeTurn(x, y);
+    }
+
+    private void refresh() {
+        Square[][] field = game.getField();
+
+        for (int i = 0, len = field.length; i < len; i++) {
+            for (int j = 0, len2 = field[i].length; j < len2; j++) {
+                if (field[i][j].getPlayer() == null) {
+                    buttons[i][j].setText("");
+                } else {
+                    buttons[i][j].setText(field[i][j].getPlayer().getName());
+                }
+            }
         }
     }
 }
